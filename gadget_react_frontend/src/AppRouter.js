@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import Navbar from "./components/Navbar";
@@ -14,8 +14,17 @@ import OrdersPage from "./pages/OrdersPage";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = React.useContext(AuthContext);
+  const location = useLocation();
   if (loading) return <div className="container" style={{ padding: 24 }}>Loading...</div>;
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (isAuthenticated) return children;
+
+  // Remember where the user was trying to go
+  try {
+    localStorage.setItem("lastProtectedPath", location.pathname + location.search);
+  } catch {
+    // ignore
+  }
+  return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
 }
 
 // PUBLIC_INTERFACE

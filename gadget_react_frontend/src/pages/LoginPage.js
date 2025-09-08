@@ -3,24 +3,34 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 export default function LoginPage() {
-  const { login } = React.useContext(AuthContext);
+  const { login, getLastPath, clearLastPath } = React.useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || "/";
+  const from = location.state?.from || getLastPath() || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErr("");
     setLoading(true);
     try {
-      await login(email, password);
-      navigate(from);
+      const res = await login(email, password);
+      if (!res || !res.access_token) {
+        throw new Error("No access token returned from server");
+      }
+      const target = from || "/";
+      clearLastPath();
+      navigate(target, { replace: true });
     } catch (e2) {
-      setErr(e2.message || "Login failed");
+      const msg =
+        e2?.data?.detail ||
+        e2?.data?.message ||
+        e2?.message ||
+        "Login failed";
+      setErr(msg);
     } finally {
       setLoading(false);
     }

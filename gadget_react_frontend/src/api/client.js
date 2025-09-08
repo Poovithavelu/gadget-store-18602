@@ -1,4 +1,5 @@
 //
+//
 // API client for communicating with FastAPI backend.
 // Uses environment variable REACT_APP_API_BASE_URL to build base URL.
 //
@@ -13,9 +14,30 @@ function getAuthToken() {
   }
 }
 
-async function request(path, options = {}) {
-  const headers = options.headers || {};
-  headers["Content-Type"] = "application/json";
+/**
+ * Intercepts 401 responses to handle logout and redirect hint.
+ * Stores the last attempted protected path to redirect after login.
+ */
+// PUBLIC_INTERFACE
+export function handleUnauthorized(path, error) {
+  try {
+    if (path) {
+      localStorage.setItem("lastProtectedPath", path);
+    }
+    localStorage.removeItem("authToken");
+  } catch {
+    // ignore storage errors
+  }
+  return error;
+}
+
+// PUBLIC_INTERFACE
+export async function request(path, options = {}) {
+  const headers = options.headers ? { ...options.headers } : {};
+  // Only set JSON content-type when not provided by caller
+  if (!headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
   const token = getAuthToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -34,10 +56,15 @@ async function request(path, options = {}) {
   }
 
   if (!resp.ok) {
-    const message = (data && (data.detail || data.message)) || resp.statusText;
+    const message =
+      (data && (data.detail || data.message || data.error)) ||
+      resp.statusText;
     const error = new Error(message || "Request failed");
     error.status = resp.status;
     error.data = data;
+    if (resp.status === 401) {
+      throw handleUnauthorized(path, error);
+    }
     throw error;
   }
 

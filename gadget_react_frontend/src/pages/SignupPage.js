@@ -1,25 +1,35 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 export default function SignupPage() {
-  const { signup } = React.useContext(AuthContext);
+  const { signup, getLastPath, clearLastPath } = React.useContext(AuthContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || getLastPath() || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErr("");
     setLoading(true);
     try {
-      await signup(name, email, password);
-      navigate("/");
+      const res = await signup(name, email, password);
+      // If signup didn't directly return token, signup handler will try auto-login.
+      const target = from || "/";
+      clearLastPath();
+      navigate(target, { replace: true });
     } catch (e2) {
-      setErr(e2.message || "Signup failed");
+      const msg =
+        e2?.data?.detail ||
+        e2?.data?.message ||
+        e2?.message ||
+        "Signup failed";
+      setErr(msg);
     } finally {
       setLoading(false);
     }

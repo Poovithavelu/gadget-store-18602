@@ -10,6 +10,8 @@ export const AuthContext = createContext({
   signup: async (_name, _email, _password) => {},
   logout: () => {},
   refreshProfile: async () => {},
+  getLastPath: () => "/",
+  clearLastPath: () => {},
 });
 
 /**
@@ -73,8 +75,28 @@ export function AuthProvider({ children }) {
   }, [loadProfile]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("authToken");
+    try {
+      localStorage.removeItem("authToken");
+    } catch {
+      // ignore
+    }
     setUser(null);
+  }, []);
+
+  const getLastPath = useCallback(() => {
+    try {
+      return localStorage.getItem("lastProtectedPath") || "/";
+    } catch {
+      return "/";
+    }
+  }, []);
+
+  const clearLastPath = useCallback(() => {
+    try {
+      localStorage.removeItem("lastProtectedPath");
+    } catch {
+      // ignore
+    }
   }, []);
 
   const value = useMemo(() => ({
@@ -85,7 +107,9 @@ export function AuthProvider({ children }) {
     signup,
     logout,
     refreshProfile: loadProfile,
-  }), [user, loading, login, signup, logout, loadProfile]);
+    getLastPath,
+    clearLastPath,
+  }), [user, loading, login, signup, logout, loadProfile, getLastPath, clearLastPath]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
