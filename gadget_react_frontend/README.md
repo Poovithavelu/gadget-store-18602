@@ -1,82 +1,47 @@
-# Lightweight React Template for KAVIA
+# Gadget Store React Frontend
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+A functional React frontend for a gadget e-commerce platform. It supports product browsing, cart, checkout, authentication (login/signup), and order history. It integrates with a FastAPI backend via REST.
 
 ## Features
+- Product listing with search
+- Product detail page
+- Cart with quantity management and totals
+- Auth: Login & Sign Up (JWT token persisted in localStorage)
+- Checkout (creates order from cart items)
+- Order history (requires authentication)
+- Theme toggle (light/dark)
+- Clean CSS with minimal dependencies
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+## Environment Variables
+Copy `.env.example` to `.env` and set:
+- `REACT_APP_API_BASE_URL` – Base URL of the FastAPI backend (e.g., http://localhost:8000)
 
-## Getting Started
+## Scripts
+- `npm start` – Start dev server
+- `npm test` – Run tests
+- `npm run build` – Build production bundle
 
-In the project directory, you can run:
+## API Contract
+Frontend expects these endpoints on the backend:
+- `POST /auth/login` -> { access_token }
+- `POST /auth/register` -> { access_token? }
+- `GET /users/me` -> user profile
+- `GET /products` -> [ { id, name, price, image_url? } ]
+- `GET /products/{id}` -> { id, name, price, description?, image_url? }
+- `POST /orders` body: { items:[{product_id,quantity,price}], total_amount, shipping_address, note? } -> { id, ... }
+- `GET /orders/my` -> list of user's orders
 
-### `npm start`
+If your backend uses different paths or field names, adjust `src/api/client.js` accordingly.
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Folder Structure Highlights
+- `src/api/client.js` – API wrapper with auth header support
+- `src/context/AuthContext.js` – Auth state and actions
+- `src/context/CartContext.js` – Cart state with localStorage persistence
+- `src/pages/*` – Pages for all user flows
+- `src/components/*` – UI components
+- `src/AppRouter.js` – Routing and protected routes
+- `src/App.js` – App shell with theme toggle
 
-### `npm test`
-
-Launches the test runner in interactive watch mode.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-## Customization
-
-### Colors
-
-The main brand colors are defined as CSS variables in `src/App.css`:
-
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
-
-### Components
-
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
-
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
-
-## Learn More
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Notes
+- Authentication token is stored under `authToken` in `localStorage`.
+- This app uses `react-router-dom@6`.
