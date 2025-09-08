@@ -44,35 +44,73 @@ async function request(path, options = {}) {
   return data;
 }
 
-// PUBLIC_INTERFACE
 export const api = {
   /** Auth endpoints */
   // PUBLIC_INTERFACE
   login: async (email, password) => {
-    // FastAPI OAuth2PasswordRequestForm expects application/x-www-form-urlencoded with 'username' and 'password'
-    const form = new URLSearchParams();
-    form.set("username", email);
-    form.set("password", password);
-    return request("/auth/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form.toString(),
-    });
+    // Try JSON login at /auth/login first
+    try {
+      const data = await request("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      return data;
+    } catch (e) {
+      // Fallback to OAuth2 token at /auth/token with form data
+      if (e?.status === 404) {
+        const form = new URLSearchParams();
+        form.set("username", email);
+        form.set("password", password);
+        return request("/auth/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: form.toString(),
+        });
+      }
+      throw e;
+    }
   },
   // PUBLIC_INTERFACE
-  signup: async (name, email, password) =>
-    request("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ email, password, full_name: name }),
-    }),
+  signup: async (name, email, password) => {
+    // Prefer /auth/register; fallback to /auth/signup if needed
+    try {
+      return await request("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password, full_name: name }),
+      });
+    } catch (e) {
+      if (e?.status === 404) {
+        return request("/auth/signup", {
+          method: "POST",
+          body: JSON.stringify({ email, password, full_name: name }),
+        });
+      }
+      throw e;
+    }
+  },
   // PUBLIC_INTERFACE
-  me: async () => request("/users/me", { method: "GET" }),
+  me: async () => {
+    try {
+      return await request("/users/me", { method: "GET" });
+    } catch (e) {
+      if (e?.status === 404) {
+        return request("/auth/me", { method: "GET" });
+      }
+      throw e;
+    }
+  },
 
   /** Product endpoints */
   // PUBLIC_INTERFACE
   getProducts: async (params = {}) => {
     const q = new URLSearchParams(params).toString();
-    return request(`/products${q ? `?${q}` : ""}`, { method: "GET" });
+    const data = await request(`/products${q ? `?${q}` : ""}`, {
+      method: "GET",
+    });
+    // Normalize to array if backend returns {items:[...]} wrapper
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    return [];
   },
   // PUBLIC_INTERFACE
   getProduct: async (id) => request(`/products/${id}`, { method: "GET" }),
@@ -82,5 +120,15 @@ export const api = {
   createOrder: async (payload) =>
     request("/orders", { method: "POST", body: JSON.stringify(payload) }),
   // PUBLIC_INTERFACE
-  getMyOrders: async () => request("/orders", { method: "GET" }),
+  getMyOrders: async () => {
+    // Prefer /orders/my; fall back to /orders if backend doesn't support the first
+    try {
+      return await request("/orders/my", { method: "GET" });
+    } catch (e) {
+      if (e?.status === 404) {
+        return request("/orders", { method: "GET" });
+      }
+      throw e;
+    }
+  },
 };

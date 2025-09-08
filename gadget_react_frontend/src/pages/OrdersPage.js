@@ -14,7 +14,11 @@ export default function OrdersPage() {
         const data = await api.getMyOrders();
         setOrders(Array.isArray(data) ? data : data?.items || []);
       } catch (e) {
-        setErr(e.message || "Failed to load orders");
+        if (e?.status === 401) {
+          setErr("You must be logged in to view your orders.");
+        } else {
+          setErr(e.message || "Failed to load orders");
+        }
       } finally {
         setLoading(false);
       }

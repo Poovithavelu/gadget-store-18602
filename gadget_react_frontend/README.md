@@ -16,6 +16,12 @@ A functional React frontend for a gadget e-commerce platform. It supports produc
 Copy `.env.example` to `.env` and set:
 - `REACT_APP_API_BASE_URL` – Base URL of the FastAPI backend (e.g., http://localhost:8000)
 
+Note: The frontend includes resilient API handling and will try common fallback paths automatically where applicable.
+- Login: tries POST /auth/login (JSON) then POST /auth/token (form urlencoded)
+- Signup: tries POST /auth/register then POST /auth/signup
+- Me: tries GET /users/me then GET /auth/me
+- Orders list: tries GET /orders/my then GET /orders
+
 ## Scripts
 - `npm start` – Start dev server
 - `npm test` – Run tests
