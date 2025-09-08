@@ -48,16 +48,22 @@ async function request(path, options = {}) {
 export const api = {
   /** Auth endpoints */
   // PUBLIC_INTERFACE
-  login: async (email, password) =>
-    request("/auth/login", {
+  login: async (email, password) => {
+    // FastAPI OAuth2PasswordRequestForm expects application/x-www-form-urlencoded with 'username' and 'password'
+    const form = new URLSearchParams();
+    form.set("username", email);
+    form.set("password", password);
+    return request("/auth/token", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+    });
+  },
   // PUBLIC_INTERFACE
   signup: async (name, email, password) =>
     request("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ email, password, full_name: name }),
     }),
   // PUBLIC_INTERFACE
   me: async () => request("/users/me", { method: "GET" }),
@@ -76,5 +82,5 @@ export const api = {
   createOrder: async (payload) =>
     request("/orders", { method: "POST", body: JSON.stringify(payload) }),
   // PUBLIC_INTERFACE
-  getMyOrders: async () => request("/orders/my", { method: "GET" }),
+  getMyOrders: async () => request("/orders", { method: "GET" }),
 };
